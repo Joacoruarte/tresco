@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import BigPizzaLogo from "@/components/BigPizzaLogo";
 
 const LINKS = [
   {
@@ -25,14 +25,7 @@ export default function Home() {
           Tresco<span className="text-accent">.</span>
         </h1>
         <div className="flex flex-col items-center gap-3">
-          <Image
-            src="/images/bigpizza_logo.avif"
-            alt="Big Pizza"
-            width={160}
-            height={160}
-            priority
-            className="h-auto w-36 rounded-2xl sm:w-40"
-          />
+          <BigPizzaLogo className="h-auto w-40 sm:w-48" />
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted">
             Big Pizza Colegiales
           </p>
