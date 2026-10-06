@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
-import { COLUMNS, db, migrate, parsePhone, toPhone } from "@/lib/db";
+import { COLUMNS, db, listPhones, migrate, parsePhone, toPhone } from "@/lib/db";
 
 export async function GET() {
-  await migrate();
-  const { rows } = await db.execute(
-    `SELECT ${COLUMNS} FROM phones ORDER BY name COLLATE NOCASE`,
-  );
-  return NextResponse.json(rows.map(toPhone));
+  return NextResponse.json(await listPhones());
 }
 
 export async function POST(request: Request) {

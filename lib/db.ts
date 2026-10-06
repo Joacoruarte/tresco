@@ -77,3 +77,11 @@ export function parsePhone(body: unknown): Omit<Phone, "id"> | null {
     whatsappOnly: type === "whatsapp" && whatsappOnly === true,
   };
 }
+
+export async function listPhones(): Promise<Phone[]> {
+  await migrate();
+  const { rows } = await db.execute(
+    `SELECT ${COLUMNS} FROM phones ORDER BY name COLLATE NOCASE`,
+  );
+  return rows.map(toPhone);
+}

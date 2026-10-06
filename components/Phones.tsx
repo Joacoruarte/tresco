@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import ConfirmModal from "@/components/ConfirmModal";
 import {
@@ -12,14 +13,8 @@ import {
 } from "@/components/icons";
 import { copyText, openWhatsApp, telHref } from "@/lib/contact";
 
-type PhoneType = "phone" | "whatsapp";
-type Phone = {
-  id: number;
-  name: string;
-  phone: string;
-  type: PhoneType;
-  whatsappOnly: boolean;
-};
+import type { Phone, PhoneType } from "@/lib/db";
+
 type PhoneInput = Omit<Phone, "id">;
 
 const input =
@@ -46,24 +41,17 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 const sortPhones = (list: Phone[]) =>
   [...list].sort((a, b) => a.name.localeCompare(b.name, "es"));
 
-export default function Phones({ onBack }: { onBack: () => void }) {
-  const [phones, setPhones] = useState<Phone[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+export default function Phones({ initialPhones }: { initialPhones: Phone[] }) {
+  const [phones, setPhones] = useState(initialPhones);
   const [adding, setAdding] = useState(false);
   const [toDelete, setToDelete] = useState<Phone | null>(null);
-
-  useEffect(() => {
-    request<Phone[]>("/api/phones")
-      .then(setPhones)
-      .catch((e: Error) => setError(e.message));
-  }, []);
 
   async function create(data: PhoneInput) {
     const created = await request<Phone>("/api/phones", {
       method: "POST",
       body: JSON.stringify(data),
     });
-    setPhones((p) => sortPhones([...(p ?? []), created]));
+    setPhones((p) => sortPhones([...p, created]));
     setAdding(false);
   }
 
@@ -72,21 +60,21 @@ export default function Phones({ onBack }: { onBack: () => void }) {
       method: "PATCH",
       body: JSON.stringify(data),
     });
-    setPhones((p) => sortPhones((p ?? []).map((x) => (x.id === id ? updated : x))));
+    setPhones((p) => sortPhones(p.map((x) => (x.id === id ? updated : x))));
   }
 
   async function remove(id: number) {
     await request(`/api/phones/${id}`, { method: "DELETE" });
-    setPhones((p) => (p ?? []).filter((x) => x.id !== id));
+    setPhones((p) => p.filter((x) => x.id !== id));
     setToDelete(null);
   }
 
   return (
     <div className="flex w-full max-w-md flex-col gap-5">
       <div className="flex items-center gap-3">
-        <button onClick={onBack} className={ghostBtn} aria-label="Volver">
+        <Link href="/" className={ghostBtn} aria-label="Volver">
           ←
-        </button>
+        </Link>
         <h2 className="font-display text-2xl font-extrabold tracking-tight">
           Números de teléfono
         </h2>
@@ -110,16 +98,12 @@ export default function Phones({ onBack }: { onBack: () => void }) {
         </button>
       )}
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
-
-      {phones === null && !error && <p className="text-sm text-muted">Cargando…</p>}
-
-      {phones?.length === 0 && (
+      {phones.length === 0 && (
         <p className="text-sm text-muted">Todavía no hay números cargados.</p>
       )}
 
       <ul className="flex flex-col gap-3">
-        {phones?.map((p) => (
+        {phones.map((p) => (
           <PhoneCard
             key={p.id}
             phone={p}
