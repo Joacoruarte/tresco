@@ -253,12 +253,20 @@ function CopyButton({ text }: { text: string }) {
       onClick={() => copyText(text).then(() => setCopied(true))}
       aria-label={copied ? "Número copiado" : "Copiar número"}
       title="Copiar número"
-      className={`inline-flex items-center gap-1 rounded-md p-1.5 transition ${
+      className={`relative inline-flex rounded-md p-1.5 transition ${
         copied ? "text-[#25D366]" : "text-muted hover:text-foreground"
       }`}
     >
+      {/* Mismo tamaño en ambos estados y el aviso flota: sin layout shift. */}
       {copied ? <CheckIcon className="size-4" /> : <CopyIcon className="size-4" />}
-      {copied && <span className="text-xs font-medium">Copiado</span>}
+      {copied && (
+        <span
+          role="status"
+          className="pointer-events-none absolute bottom-full left-1/2 mb-1 -translate-x-1/2 whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-xs font-medium text-background shadow"
+        >
+          Copiado
+        </span>
+      )}
     </button>
   );
 }
