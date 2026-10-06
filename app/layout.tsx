@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Bricolage_Grotesque } from "next/font/google";
+import PullToRefresh from "@/components/PullToRefresh";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -37,7 +38,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="es"
       className={`${geistSans.variable} ${display.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <PullToRefresh />
+        {children}
+      </body>
     </html>
   );
 }

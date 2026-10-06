@@ -6,9 +6,11 @@ import ConfirmModal from "@/components/ConfirmModal";
 import {
   CheckIcon,
   ChevronIcon,
+  CloseIcon,
   CopyIcon,
   PhoneIcon,
   PlusIcon,
+  SearchIcon,
   WhatsAppIcon,
 } from "@/components/icons";
 import { copyText, openWhatsApp, telHref } from "@/lib/contact";
@@ -41,10 +43,52 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 const sortPhones = (list: Phone[]) =>
   [...list].sort((a, b) => a.name.localeCompare(b.name, "es"));
 
+type Channel = "both" | "phone" | "whatsapp";
+type Filter = "all" | Channel;
+
+const FILTERS: { value: Filter; label: string }[] = [
+  { value: "all", label: "Todos" },
+  { value: "both", label: "Ambos" },
+  { value: "phone", label: "Solo teléfono" },
+  { value: "whatsapp", label: "Solo WhatsApp" },
+];
+
+function channelOf(p: Phone): Channel {
+  if (p.type === "phone") return "phone";
+  return p.whatsappOnly ? "whatsapp" : "both";
+}
+
+// "José" matchea "jose": sin mayúsculas ni tildes.
+const normalize = (text: string) =>
+  text
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .trim();
+
 export default function Phones({ initialPhones }: { initialPhones: Phone[] }) {
   const [phones, setPhones] = useState(initialPhones);
   const [adding, setAdding] = useState(false);
   const [toDelete, setToDelete] = useState<Phone | null>(null);
+  const [query, setQuery] = useState("");
+
+  const [filter, setFilter] = useState<Filter>("all");
+
+  const q = normalize(query);
+  const matching = q
+    ? phones.filter((p) => normalize(p.name).includes(q))
+    : phones;
+  const counts: Record<Filter, number> = {
+    all: matching.length,
+    both: 0,
+    phone: 0,
+    whatsapp: 0,
+  };
+  for (const p of matching) counts[channelOf(p)]++;
+  const visible =
+    filter === "all"
+      ? matching
+      : matching.filter((p) => channelOf(p) === filter);
 
   async function create(data: PhoneInput) {
     const created = await request<Phone>("/api/phones", {
@@ -98,12 +142,85 @@ export default function Phones({ initialPhones }: { initialPhones: Phone[] }) {
         </button>
       )}
 
+      {phones.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <div className="relative">
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Escape" && setQuery("")}
+              placeholder="Buscar por nombre"
+              aria-label="Buscar por nombre"
+              autoComplete="off"
+              className={`${input} pr-10 pl-9 [&::-webkit-search-cancel-button]:hidden`}
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                aria-label="Limpiar búsqueda"
+                className="absolute top-1/2 right-1.5 -translate-y-1/2 rounded-md p-1.5 text-muted transition hover:text-foreground"
+              >
+                <CloseIcon className="size-4" />
+              </button>
+            )}
+          </div>
+          <div
+            className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            role="group"
+            aria-label="Filtrar por tipo"
+          >
+            {FILTERS.map((f) => {
+              const active = filter === f.value;
+              return (
+                <button
+                  key={f.value}
+                  type="button"
+                  onClick={() => setFilter(f.value)}
+                  aria-pressed={active}
+                  className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+                    active
+                      ? "border-accent bg-accent text-white"
+                      : "border-border bg-card text-foreground hover:border-accent"
+                  }`}
+                >
+                  {f.label}
+                  <span
+                    className={`rounded-full px-1.5 text-xs tabular-nums ${
+                      active ? "bg-white/25" : "bg-border text-muted"
+                    }`}
+                  >
+                    {counts[f.value]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {phones.length === 0 && (
         <p className="text-sm text-muted">Todavía no hay números cargados.</p>
       )}
 
+      {phones.length > 0 && visible.length === 0 && (
+        <p className="text-sm text-muted">
+          No hay números que coincidan
+          {q && <> con &ldquo;{query.trim()}&rdquo;</>}
+          {filter !== "all" && (
+            <>
+              {" "}
+              en &ldquo;{FILTERS.find((f) => f.value === filter)?.label}&rdquo;
+            </>
+          )}
+          .
+        </p>
+      )}
+
       <ul className="flex flex-col gap-3">
-        {phones.map((p) => (
+        {visible.map((p) => (
           <PhoneCard
             key={p.id}
             phone={p}
@@ -182,14 +299,23 @@ function PhoneCard({
           className="-m-1 shrink-0 rounded-lg p-1.5 text-muted transition hover:text-foreground"
         >
           <ChevronIcon
-            className={`size-5 transition-transform ${expanded ? "rotate-180" : ""}`}
+            className={`size-5 transition-transform ${
+              expanded ? "rotate-180" : ""
+            }`}
           />
         </button>
       </div>
 
-      <div className={`mt-3 grid gap-2 ${canCall && canWhatsApp ? "grid-cols-2" : "grid-cols-1"}`}>
+      <div
+        className={`mt-3 grid gap-2 ${
+          canCall && canWhatsApp ? "grid-cols-2" : "grid-cols-1"
+        }`}
+      >
         {canCall && (
-          <a href={telHref(p.phone)} className={`${actionBtn} bg-accent text-white hover:opacity-90`}>
+          <a
+            href={telHref(p.phone)}
+            className={`${actionBtn} bg-accent text-white hover:opacity-90`}
+          >
             <PhoneIcon className="size-4" />
             Llamar
           </a>
@@ -242,7 +368,11 @@ function CopyButton({ text }: { text: string }) {
       }`}
     >
       {/* Mismo tamaño en ambos estados y el aviso flota: sin layout shift. */}
-      {copied ? <CheckIcon className="size-4" /> : <CopyIcon className="size-4" />}
+      {copied ? (
+        <CheckIcon className="size-4" />
+      ) : (
+        <CopyIcon className="size-4" />
+      )}
       {copied && (
         <span
           role="status"
@@ -269,7 +399,9 @@ function PhoneForm({
   const [name, setName] = useState(initial?.name ?? "");
   const [phone, setPhone] = useState(initial?.phone ?? "");
   const [type, setType] = useState<PhoneType>(initial?.type ?? "phone");
-  const [whatsappOnly, setWhatsappOnly] = useState(initial?.whatsappOnly ?? false);
+  const [whatsappOnly, setWhatsappOnly] = useState(
+    initial?.whatsappOnly ?? false,
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -278,7 +410,12 @@ function PhoneForm({
     setSaving(true);
     setError(null);
     try {
-      await onSubmit({ name, phone, type, whatsappOnly: type === "whatsapp" && whatsappOnly });
+      await onSubmit({
+        name,
+        phone,
+        type,
+        whatsappOnly: type === "whatsapp" && whatsappOnly,
+      });
     } catch (err) {
       setError((err as Error).message);
       setSaving(false);
@@ -327,8 +464,8 @@ function PhoneForm({
               Solo WhatsApp (sin botón de llamar)
             </label>
             <p className="px-1 text-xs text-muted">
-              Cargalo con código de área y sin el 15. Si no tiene código de país se asume
-              Argentina (+54 9).
+              Cargalo con código de área y sin el 15. Si no tiene código de país
+              se asume Argentina (+54 9).
             </p>
           </>
         )}

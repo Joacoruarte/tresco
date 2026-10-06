@@ -16,6 +16,15 @@ export default function Loading() {
           <Bone className="h-8 w-56" />
         </div>
         <Bone className="h-11 w-full" />
+        {/* Buscador + chips de filtro */}
+        <div className="flex flex-col gap-3">
+          <Bone className="h-[46px] w-full" />
+          <div className="-mx-4 flex gap-2 overflow-hidden px-4">
+            {["w-[90px]", "w-[97px]", "w-[139px]", "w-[152px]"].map((w, i) => (
+              <Bone key={i} className={`h-[34px] shrink-0 rounded-full ${w}`} />
+            ))}
+          </div>
+        </div>
         <ul className="flex flex-col gap-3">
           {[0, 1, 2].map((i) => (
             <li key={i} className="rounded-xl border border-border bg-card p-4">

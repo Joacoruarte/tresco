@@ -51,3 +51,9 @@ body {
     cursor: not-allowed;
   }
 }
+
+/* PWA instalada: sin rebote nativo, el gesto lo maneja <PullToRefresh /> */
+html.standalone,
+html.standalone body {
+  overscroll-behavior-y: none;
+}
