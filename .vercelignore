@@ -1,0 +1,6 @@
+.env*
+*.db
+*.db-*
+.next
+out
+node_modules

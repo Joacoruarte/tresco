@@ -25,3 +25,9 @@ next-env.d.ts
 # editors
 .vscode/
 .idea/
+
+# sqlite local
+*.db
+*.db-journal
+*.db-wal
+*.db-shm

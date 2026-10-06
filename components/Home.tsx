@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import BigPizzaLogo from "@/components/BigPizzaLogo";
+import Phones from "@/components/Phones";
 
 const LINKS = [
   {
@@ -17,7 +19,20 @@ const LINKS = [
   },
 ];
 
+const linkClass =
+  "flex items-center justify-between rounded-xl border border-border bg-card px-5 py-4 font-medium transition hover:border-accent hover:text-accent active:scale-[0.98]";
+
 export default function Home() {
+  const [view, setView] = useState<"home" | "phones">("home");
+
+  if (view === "phones") {
+    return (
+      <main className="flex flex-1 flex-col items-center px-4 py-10">
+        <Phones onBack={() => setView("home")} />
+      </main>
+    );
+  }
+
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-10 px-4 py-12">
       <div className="flex flex-col items-center gap-6 text-center">
@@ -39,12 +54,16 @@ export default function Home() {
             href={link.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-between rounded-xl border border-border bg-card px-5 py-4 font-medium transition hover:border-accent hover:text-accent active:scale-[0.98]"
+            className={linkClass}
           >
             {link.label}
             <span aria-hidden>↗</span>
           </a>
         ))}
+        <button onClick={() => setView("phones")} className={`${linkClass} text-left`}>
+          Números de teléfono
+          <span aria-hidden>→</span>
+        </button>
       </nav>
     </main>
   );
